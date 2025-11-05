@@ -156,11 +156,10 @@ function createFootprint() {
   }, 2000);
 }
 
-// Mensaje inicial
 if (window.DeviceMotionEvent) {
   document.getElementById("status").textContent =
-    "📱 Presiona el botón para comenzar";
+    "Presiona el botón para comenzar";
 } else {
   document.getElementById("status").textContent =
-    "⚠️ Tu dispositivo no soporta sensor de movimiento";
+    "Tu dispositivo no soporta sensor de movimiento";
 }
