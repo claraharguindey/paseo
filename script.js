@@ -35,7 +35,9 @@ let stepCount = 0;
 let currentLocationIndex = 0;
 let isTracking = false;
 let lastAcceleration = { x: 0, y: 0, z: 0 };
-let stepThreshold = 12;
+let stepThreshold = 6; // Reducido para mejor detección
+let lastStepTime = 0;
+let stepCooldown = 250; // Milisegundos entre pasos para evitar duplicados
 
 function startAdventure() {
   if (
@@ -70,7 +72,7 @@ function stopAdventure() {
   isTracking = false;
   document.getElementById("startBtn").textContent = "Reiniciar";
   document.getElementById("startBtn").onclick = resetAdventure;
-  document.getElementById("status").textContent = "Aventura pausada";
+  document.getElementById("status").textContent = "⏸️ Aventura pausada";
   window.removeEventListener("devicemotion", handleMotion);
 }
 
@@ -79,7 +81,7 @@ function resetAdventure() {
   currentLocationIndex = 0;
   document.getElementById("stepCount").textContent = stepCount;
   updateLocation();
-  document.getElementById("startBtn").textContent = "Iniciar Aventura";
+  document.getElementById("startBtn").textContent = "empezar";
   document.getElementById("startBtn").onclick = startAdventure;
   document.getElementById("status").textContent =
     "Presiona el botón para comenzar";
@@ -91,15 +93,22 @@ function handleMotion(event) {
   const acceleration = event.accelerationIncludingGravity;
 
   if (acceleration) {
+    // Calcular la magnitud del cambio de aceleración
     const deltaX = Math.abs(acceleration.x - lastAcceleration.x);
     const deltaY = Math.abs(acceleration.y - lastAcceleration.y);
     const deltaZ = Math.abs(acceleration.z - lastAcceleration.z);
 
     const totalDelta = deltaX + deltaY + deltaZ;
+    
+    // Control de tiempo para evitar contar el mismo paso múltiples veces
+    const currentTime = Date.now();
+    const timeSinceLastStep = currentTime - lastStepTime;
 
-    if (totalDelta > stepThreshold) {
+    // Detectar paso si supera el umbral y ha pasado suficiente tiempo
+    if (totalDelta > stepThreshold && timeSinceLastStep > stepCooldown) {
       registerStep();
       createFootprint();
+      lastStepTime = currentTime;
     }
 
     lastAcceleration = {
@@ -114,8 +123,8 @@ function registerStep() {
   stepCount++;
   document.getElementById("stepCount").textContent = stepCount;
 
-  // Cambiar de ubicación cada 5 pasos
-  if (stepCount % 5 === 0 && currentLocationIndex < locations.length - 1) {
+  // Cambiar de ubicación cada 3 pasos (antes era 5)
+  if (stepCount % 3 === 0 && currentLocationIndex < locations.length - 1) {
     currentLocationIndex++;
     updateLocation();
   }
@@ -150,7 +159,7 @@ function createFootprint() {
 // Mensaje inicial
 if (window.DeviceMotionEvent) {
   document.getElementById("status").textContent =
-    " Presiona el botón para comenzar";
+    "📱 Presiona el botón para comenzar";
 } else {
   document.getElementById("status").textContent =
     "⚠️ Tu dispositivo no soporta sensor de movimiento";
