@@ -34,10 +34,17 @@ const locations = [
 let stepCount = 0;
 let currentLocationIndex = 0;
 let isTracking = false;
-let lastAcceleration = { x: 0, y: 0, z: 0 };
-let stepThreshold = 6; 
+
+// Variables para detección de pasos mejorada
+let accelerationHistory = [];
+let historySize = 10;
+let peakThreshold = 1.5; // Umbral para detectar picos
 let lastStepTime = 0;
-let stepCooldown = 250; 
+let stepCooldown = 300;
+
+// Detectar si es Android o iOS
+const isAndroid = /Android/i.test(navigator.userAgent);
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function startAdventure() {
   if (
@@ -60,10 +67,13 @@ function startAdventure() {
 
 function initializeTracking() {
   isTracking = true;
+  accelerationHistory = [];
   document.getElementById("startBtn").textContent = "Detener";
   document.getElementById("startBtn").onclick = stopAdventure;
+  
+  let deviceInfo = isAndroid ? " (Android)" : isIOS ? " (iOS)" : "";
   document.getElementById("status").textContent =
-    "✅ ¡Camina para descubrir lugares!";
+    "✅ ¡Camina para descubrir lugares!" + deviceInfo;
 
   window.addEventListener("devicemotion", handleMotion);
 }
@@ -79,6 +89,7 @@ function stopAdventure() {
 function resetAdventure() {
   stepCount = 0;
   currentLocationIndex = 0;
+  accelerationHistory = [];
   document.getElementById("stepCount").textContent = stepCount;
   updateLocation();
   document.getElementById("startBtn").textContent = "empezar";
@@ -92,30 +103,58 @@ function handleMotion(event) {
 
   const acceleration = event.accelerationIncludingGravity;
 
-  if (acceleration) {
-    // Calcular la magnitud del cambio de aceleración
-    const deltaX = Math.abs(acceleration.x - lastAcceleration.x);
-    const deltaY = Math.abs(acceleration.y - lastAcceleration.y);
-    const deltaZ = Math.abs(acceleration.z - lastAcceleration.z);
+  if (acceleration && acceleration.x !== null && acceleration.y !== null && acceleration.z !== null) {
+    // Calcular la magnitud total de aceleración
+    const magnitude = Math.sqrt(
+      acceleration.x * acceleration.x +
+      acceleration.y * acceleration.y +
+      acceleration.z * acceleration.z
+    );
 
-    const totalDelta = deltaX + deltaY + deltaZ;
+    // Añadir a historial
+    accelerationHistory.push(magnitude);
     
-    // Control de tiempo para evitar contar el mismo paso múltiples veces
-    const currentTime = Date.now();
-    const timeSinceLastStep = currentTime - lastStepTime;
-
-    // Detectar paso si supera el umbral y ha pasado suficiente tiempo
-    if (totalDelta > stepThreshold && timeSinceLastStep > stepCooldown) {
-      registerStep();
-      createFootprint();
-      lastStepTime = currentTime;
+    // Mantener solo los últimos valores
+    if (accelerationHistory.length > historySize) {
+      accelerationHistory.shift();
     }
 
-    lastAcceleration = {
-      x: acceleration.x,
-      y: acceleration.y,
-      z: acceleration.z,
-    };
+    // Necesitamos suficiente historial para detectar patrones
+    if (accelerationHistory.length >= historySize) {
+      detectStep();
+    }
+  }
+}
+
+function detectStep() {
+  const currentTime = Date.now();
+  const timeSinceLastStep = currentTime - lastStepTime;
+
+  // Evitar detecciones muy seguidas
+  if (timeSinceLastStep < stepCooldown) {
+    return;
+  }
+
+  // Calcular promedio y variación
+  const avg = accelerationHistory.reduce((a, b) => a + b, 0) / accelerationHistory.length;
+  const variance = accelerationHistory.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / accelerationHistory.length;
+  const stdDev = Math.sqrt(variance);
+
+  // Obtener valores recientes
+  const recent = accelerationHistory.slice(-3);
+  const middle = recent[1];
+
+  // Detectar pico (el valor del medio es mayor que sus vecinos)
+  const isPeak = middle > recent[0] && middle > recent[2];
+  
+  // Ajustar umbral según dispositivo
+  const threshold = isAndroid ? 1.2 : 1.5;
+
+  // Si hay un pico significativo y suficiente variación, es un paso
+  if (isPeak && stdDev > threshold) {
+    registerStep();
+    createFootprint();
+    lastStepTime = currentTime;
   }
 }
 
@@ -123,7 +162,7 @@ function registerStep() {
   stepCount++;
   document.getElementById("stepCount").textContent = stepCount;
 
-  // Cambiar de ubicación cada 3 pasos (antes era 5)
+  // Cambiar de ubicación cada 3 pasos
   if (stepCount % 3 === 0 && currentLocationIndex < locations.length - 1) {
     currentLocationIndex++;
     updateLocation();
@@ -156,10 +195,11 @@ function createFootprint() {
   }, 2000);
 }
 
+// Mensaje inicial
 if (window.DeviceMotionEvent) {
   document.getElementById("status").textContent =
     "Presiona el botón para comenzar";
 } else {
   document.getElementById("status").textContent =
-    "Tu dispositivo no soporta sensor de movimiento";
+    "⚠️ Tu dispositivo no soporta sensor de movimiento";
 }
