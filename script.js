@@ -34,13 +34,16 @@ const locations = [
 let stepCount = 0;
 let currentLocationIndex = 0;
 let isTracking = false;
+let isMoving = false;
 
 // Variables para detección de pasos mejorada
 let accelerationHistory = [];
 let historySize = 10;
-let peakThreshold = 1.5; // Umbral para detectar picos
+let peakThreshold = 1.5;
 let lastStepTime = 0;
 let stepCooldown = 300;
+let lastMovementTime = 0;
+let movementTimeout = 1500; // Tiempo sin movimiento para considerar "quieto"
 
 // Detectar si es Android o iOS
 const isAndroid = /Android/i.test(navigator.userAgent);
@@ -75,7 +78,11 @@ function initializeTracking() {
   document.getElementById("status").textContent =
     "✅ ¡Camina para descubrir lugares!" + deviceInfo;
 
+  updateMovementStatus(false);
   window.addEventListener("devicemotion", handleMotion);
+  
+  // Comprobar periódicamente si se ha detenido
+  setInterval(checkMovementStatus, 200);
 }
 
 function stopAdventure() {
@@ -90,7 +97,8 @@ function resetAdventure() {
   stepCount = 0;
   currentLocationIndex = 0;
   accelerationHistory = [];
-  document.getElementById("stepCount").textContent = stepCount;
+  isMoving = false;
+  document.getElementById("stepCount").textContent = "quieto";
   updateLocation();
   document.getElementById("startBtn").textContent = "empezar";
   document.getElementById("startBtn").onclick = startAdventure;
@@ -104,22 +112,18 @@ function handleMotion(event) {
   const acceleration = event.accelerationIncludingGravity;
 
   if (acceleration && acceleration.x !== null && acceleration.y !== null && acceleration.z !== null) {
-    // Calcular la magnitud total de aceleración
     const magnitude = Math.sqrt(
       acceleration.x * acceleration.x +
       acceleration.y * acceleration.y +
       acceleration.z * acceleration.z
     );
 
-    // Añadir a historial
     accelerationHistory.push(magnitude);
     
-    // Mantener solo los últimos valores
     if (accelerationHistory.length > historySize) {
       accelerationHistory.shift();
     }
 
-    // Necesitamos suficiente historial para detectar patrones
     if (accelerationHistory.length >= historySize) {
       detectStep();
     }
@@ -130,37 +134,58 @@ function detectStep() {
   const currentTime = Date.now();
   const timeSinceLastStep = currentTime - lastStepTime;
 
-  // Evitar detecciones muy seguidas
   if (timeSinceLastStep < stepCooldown) {
     return;
   }
 
-  // Calcular promedio y variación
   const avg = accelerationHistory.reduce((a, b) => a + b, 0) / accelerationHistory.length;
   const variance = accelerationHistory.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / accelerationHistory.length;
   const stdDev = Math.sqrt(variance);
 
-  // Obtener valores recientes
   const recent = accelerationHistory.slice(-3);
   const middle = recent[1];
 
-  // Detectar pico (el valor del medio es mayor que sus vecinos)
   const isPeak = middle > recent[0] && middle > recent[2];
-  
-  // Ajustar umbral según dispositivo
   const threshold = isAndroid ? 1.2 : 1.5;
 
-  // Si hay un pico significativo y suficiente variación, es un paso
   if (isPeak && stdDev > threshold) {
     registerStep();
     createFootprint();
     lastStepTime = currentTime;
+    lastMovementTime = currentTime;
+    
+    if (!isMoving) {
+      isMoving = true;
+      updateMovementStatus(true);
+    }
+  }
+}
+
+function checkMovementStatus() {
+  if (!isTracking) return;
+  
+  const currentTime = Date.now();
+  const timeSinceLastMovement = currentTime - lastMovementTime;
+  
+  if (isMoving && timeSinceLastMovement > movementTimeout) {
+    isMoving = false;
+    updateMovementStatus(false);
+  }
+}
+
+function updateMovementStatus(moving) {
+  const statusEl = document.getElementById("stepCount");
+  if (moving) {
+    statusEl.textContent = "en movimiento";
+    statusEl.style.color = "#4ade80"; // verde
+  } else {
+    statusEl.textContent = "quieto";
+    statusEl.style.color = "#94a3b8"; // gris
   }
 }
 
 function registerStep() {
   stepCount++;
-  document.getElementById("stepCount").textContent = stepCount;
 
   // Cambiar de ubicación cada 3 pasos
   if (stepCount % 3 === 0 && currentLocationIndex < locations.length - 1) {
@@ -173,7 +198,6 @@ function updateLocation() {
   const location = locations[currentLocationIndex];
   document.getElementById("locationText").textContent = location.text;
 
-  // Reiniciar animación
   const textEl = document.getElementById("locationText");
   textEl.style.animation = "none";
   setTimeout(() => {
