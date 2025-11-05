@@ -35,9 +35,9 @@ let stepCount = 0;
 let currentLocationIndex = 0;
 let isTracking = false;
 let lastAcceleration = { x: 0, y: 0, z: 0 };
-let stepThreshold = 6; // Reducido para mejor detección
+let stepThreshold = 6; 
 let lastStepTime = 0;
-let stepCooldown = 250; // Milisegundos entre pasos para evitar duplicados
+let stepCooldown = 250; 
 
 function startAdventure() {
   if (
