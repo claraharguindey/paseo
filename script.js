@@ -84,8 +84,8 @@ const locations = [
 ];
 
 let stepCount = 0;
-let usedIndices = []; // Array para guardar los índices ya usados
-let currentLocationIndex = 0;
+let usedIndices = [];
+let currentLocationIndex = -1; // Iniciar en -1
 let isTracking = false;
 let isMoving = false;
 
@@ -99,10 +99,8 @@ let movementTimeout = 1500;
 const isAndroid = /Android/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// Función para obtener un índice aleatorio que no se haya usado
 function getRandomUnusedIndex() {
   if (usedIndices.length >= locations.length) {
-    // Si ya se usaron todos, reiniciar
     usedIndices = [];
   }
   
@@ -125,7 +123,7 @@ function startAdventure() {
         if (permissionState === "granted") {
           initializeTracking();
         } else {
-          document.getElementById("status").textContent = "❌ Permiso denegado";
+          document.getElementById("status").textContent = "permiso denegado";
         }
       })
       .catch(console.error);
@@ -137,8 +135,16 @@ function startAdventure() {
 function initializeTracking() {
   isTracking = true;
   accelerationHistory = [];
+  
+  // Mostrar primera ubicación aleatoria al empezar
+  if (currentLocationIndex === -1) {
+    currentLocationIndex = getRandomUnusedIndex();
+    updateLocation();
+  }
+  
   document.getElementById("startBtn").textContent = "detener";
   document.getElementById("startBtn").onclick = stopAdventure;
+  document.getElementById("status").textContent = "";
 
   updateMovementStatus(false);
   window.addEventListener("devicemotion", handleMotion);
@@ -150,19 +156,22 @@ function stopAdventure() {
   isTracking = false;
   document.getElementById("startBtn").textContent = "reiniciar";
   document.getElementById("startBtn").onclick = resetAdventure;
+  document.getElementById("status").textContent = "pausado";
   window.removeEventListener("devicemotion", handleMotion);
   updateMovementStatus(false);
 }
 
 function resetAdventure() {
   stepCount = 0;
-  currentLocationIndex = 0;
-  usedIndices = []; // Reiniciar los índices usados
+  currentLocationIndex = -1;
+  usedIndices = [];
   accelerationHistory = [];
   isMoving = false;
-  updateLocation();
+  
+  document.getElementById("locationText").textContent = "...";
   document.getElementById("startBtn").textContent = "empezar";
   document.getElementById("startBtn").onclick = startAdventure;
+  document.getElementById("status").textContent = "";
 
   const indicator = document.getElementById("statusIndicator");
   indicator.classList.remove("moving", "stopped");
@@ -257,7 +266,6 @@ function updateMovementStatus(moving) {
 function registerStep() {
   stepCount++;
 
-  // Cada 3 pasos, mostrar una nueva ubicación aleatoria
   if (stepCount % 3 === 0) {
     currentLocationIndex = getRandomUnusedIndex();
     updateLocation();
@@ -269,9 +277,12 @@ function updateLocation() {
   document.getElementById("locationText").textContent = location.text;
 }
 
+// Inicialización
 if (window.DeviceMotionEvent) {
+  document.getElementById("locationText").textContent = "...";
   document.getElementById("status").textContent = "";
 } else {
+  document.getElementById("locationText").textContent = "...";
   document.getElementById("status").textContent =
     "tu dispositivo no soporta sensor de movimiento";
 }
