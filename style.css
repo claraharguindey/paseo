@@ -27,8 +27,8 @@ body {
 }
 
 .status-indicator {
-  width: 20px;
-  height: 20px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: #666;
   transition: background-color 0.3s ease;
