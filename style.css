@@ -6,137 +6,90 @@
 
 body {
   min-height: 100vh;
-  color: black;
+  background-color: #000;
+  color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 }
 
 .container {
   text-align: center;
-  max-width: 500px;
+  max-width: 100%;
   width: 100%;
-}
-
-h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
-}
-
-.location-display {
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  min-height: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
+  gap: 40px;
+}
+
+.status-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #666;
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.moving {
+  background-color: #0f0;
+}
+
+.status-indicator.stopped {
+  background-color: #f00;
+}
+
+.location-display {
+  width: 100%;
+  padding: 20px;
 }
 
 .location-text {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-bottom: 15px;
-  animation: fadeIn 0.5s ease-in;
-}
-
-.emoji {
-  font-size: 3em;
-  margin-bottom: 15px;
-  animation: bounce 0.6s ease-in-out;
-}
-
-.step-counter {
-  padding: 15px 25px;
-  border-radius: 30px;
-  font-size: 1.2em;
-  margin-bottom: 15px;
-}
-
-.instruction {
-  font-size: 0.9em;
-  opacity: 0.9;
-  margin-top: 10px;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #fff;
 }
 
 .btn {
-  border: 2px solid white;
-  padding: 12px 30px;
-  border-radius: 25px;
-  font-size: 1em;
+  background-color: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  padding: 15px 40px;
+  font-size: 1.2rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin: 5px;
-}
-
-.btn:hover {
-  background: rgba(255, 255, 255, 0.5);
-  transform: scale(1.05);
+  font-family: inherit;
+  text-transform: lowercase;
+  transition: all 0.2s ease;
 }
 
 .btn:active {
-  transform: scale(0.95);
+  background-color: #fff;
+  color: #000;
 }
 
 .status {
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.2);
-  font-size: 0.9em;
+  font-size: 0.9rem;
+  color: #999;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
+/* Optimización para móvil */
+@media (max-width: 768px) {
+  .location-text {
+    font-size: 1.8rem;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .btn {
+    font-size: 1rem;
+    padding: 12px 35px;
   }
 }
 
-@keyframes bounce {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.path-trail {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: -1;
-}
-
-.footprint {
-  position: absolute;
-  font-size: 2em;
-  opacity: 0;
-  animation: footprintFade 2s ease-out forwards;
-}
-
-@keyframes footprintFade {
-  0% {
-    opacity: 0.7;
-    transform: scale(0.5);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.2);
+@media (max-width: 480px) {
+  .location-text {
+    font-size: 1.5rem;
   }
 }

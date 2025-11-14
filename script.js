@@ -1,51 +1,57 @@
 const locations = [
-  { text: "Sales de casa hacia la aventura" },
-  { text: "Caminas por la acera del barrio" },
-  { text: "Atraviesas un pequeño parque" },
-  { text: "Pasas junto a una cafetería" },
-  { text: "Llegas a un semáforo" },
-  { text: "Cruzas la calle principal" },
-  { text: "Atraviesas un puente sobre el río" },
-  { text: "Pasas por una panadería aromática" },
-  { text: "Ves una fuente en la plaza" },
-  { text: "Caminas junto a un colegio" },
-  { text: "Pasas por una biblioteca silenciosa" },
-  { text: "Atraviesas un mercado animado" },
-  { text: "Subes una pequeña cuesta" },
-  { text: "Bajas por una calle empinada" },
-  { text: "Pasas junto a un parque infantil" },
-  { text: "Llegas a una estación de metro" },
-  { text: "Caminas por un túnel" },
-  { text: "Atraviesas un jardín botánico" },
-  { text: "Pasas por una zona comercial" },
-  { text: "Llegas a un mirador con vistas" },
-  { text: "Caminas junto al río" },
-  { text: "Atraviesas un bosquecillo" },
-  { text: "Pasas por una iglesia antigua" },
-  { text: "Llegas a una rotonda" },
-  { text: "Caminas por una zona peatonal" },
-  { text: "Pasas junto a un hospital" },
-  { text: "Atraviesas un túnel de árboles" },
-  { text: "Llegas a un centro deportivo" },
-  { text: "Pasas por una estación de tren" },
-  { text: "¡Has completado un gran recorrido!" },
+ { text: "El suelo del parque está cubierto de hojas de haya" },
+ { text: "Atraviesas el antiguo monumento en ruinas" },
+ { text: "Cruzas los soportales junto a la plaza del ayuntamiento" },
+ { text: "Vislumbras una montaña en el horizonte, a lo lejos" },
+{ text: "Alguien está voceando, busca a un perrito llamado Pinky" },
+ { text: "Te detienes frente a la entrada de un jardín cercado" },
+ { text: "Cruzas la avenida principal, llena de tiendas con escaparates" },
+ { text: "Atraviesas un puente de piedra sobre el río" },
+ { text: "Se acerca una nube con forma de osito de gominola" },
+ { text: "Recoges unas castañas del suelo y las pelas por el camino" },
+{ text: "Te cruzas con una antigua profesora que te hacía la vida imposible" },
+ { text: "Pasas junto a una tienda de chucherías, te apetece regaliz" },
+ { text: "Un hombre vestido de hechicero cruza rápidamente el paso de peatones" },
+ { text: "Pasas junto a un gran colegio de ladrillo; hay niños jugando" },
+ { text: "Atraviesas el parque infantil, te apetece montarte en los columpios" },
+ { text: "Te acercas a la entrada del museo, va a haber una nueva exposición" },
+ { text: "Al otro lado de una colina se distingue un bosque" },
+ { text: "Pasas junto al supermercado, te apetece comprar cereales" },
+ { text: "Alguien te reparte un flyer de un recital poético" },
+ { text: "Te cruzas con una cantante famosa, pero no recuerdas cómo se llama" },
+ { text: "Parece que el circo se acerca a la ciudad" },
+ { text: "Una familia de patos atraviesa la calle en dirección al parque" },
+{ text: "Un gato te mira desde un balcón, parece lleno de sabiduría" },
+ { text: "Pasas junto a la biblioteca pública y aprovechas para sacar un libro" },
+ { text: "Atraviesas un pequeño mercado de productos artesanales" },
+{ text: "Te cruzas con un político local, parece de buen humor" },
+{ text: "Recoges unas moras, quizás hoy hagas mermelada con ellas" },
+{ text: "Te cruzas con un cartel de “Se busca”, aparece tu abuela" },
+{ text: "Tiras una roca plana a un estanque y consigues que de tres saltos" },
+ { text: "Subes una pequeña pendiente, desde arriba hay una vista preciosa" },
+ { text: "Te cruzas con un perro muy pequeño que ladra muy fuerte" },
+{ text: "Pasas junto al museo, hay una exposición sobre la historia de la sopa" },
+ { text: "Un gato sale de unos arbustos y te pega un buen susto" },
+ { text: "Encuentras la casa abandonada, miras suspicaz por una ventanita" },
+ { text: "Pasas junto a un puesto de perritos calientes, pero tienes el estómago fatal" },
+ { text: "Distingues un niño de cigüeña en lo alto de un campanario" },
+ { text: "Pasas junto a una panadería que huele muy bien, te da hambre" },
 ];
+
+
 
 let stepCount = 0;
 let currentLocationIndex = 0;
 let isTracking = false;
 let isMoving = false;
 
-// Variables para detección de pasos mejorada
 let accelerationHistory = [];
 let historySize = 10;
-let peakThreshold = 1.5;
 let lastStepTime = 0;
 let stepCooldown = 300;
 let lastMovementTime = 0;
-let movementTimeout = 1500; // Tiempo sin movimiento para considerar "quieto"
+let movementTimeout = 1500;
 
-// Detectar si es Android o iOS
 const isAndroid = /Android/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -71,26 +77,21 @@ function startAdventure() {
 function initializeTracking() {
   isTracking = true;
   accelerationHistory = [];
-  document.getElementById("startBtn").textContent = "Detener";
+  document.getElementById("startBtn").textContent = "detener";
   document.getElementById("startBtn").onclick = stopAdventure;
   
-  let deviceInfo = isAndroid ? " (Android)" : isIOS ? " (iOS)" : "";
-  document.getElementById("status").textContent =
-    "✅ ¡Camina para descubrir lugares!" + deviceInfo;
-
   updateMovementStatus(false);
   window.addEventListener("devicemotion", handleMotion);
   
-  // Comprobar periódicamente si se ha detenido
   setInterval(checkMovementStatus, 200);
 }
 
 function stopAdventure() {
   isTracking = false;
-  document.getElementById("startBtn").textContent = "Reiniciar";
+  document.getElementById("startBtn").textContent = "reiniciar";
   document.getElementById("startBtn").onclick = resetAdventure;
-  document.getElementById("status").textContent = "⏸️ Aventura pausada";
   window.removeEventListener("devicemotion", handleMotion);
+  updateMovementStatus(false);
 }
 
 function resetAdventure() {
@@ -98,12 +99,12 @@ function resetAdventure() {
   currentLocationIndex = 0;
   accelerationHistory = [];
   isMoving = false;
-  document.getElementById("stepCount").textContent = "quieto";
   updateLocation();
   document.getElementById("startBtn").textContent = "empezar";
   document.getElementById("startBtn").onclick = startAdventure;
-  document.getElementById("status").textContent =
-    "Presiona el botón para comenzar";
+  
+  const indicator = document.getElementById("statusIndicator");
+  indicator.classList.remove("moving", "stopped");
 }
 
 function handleMotion(event) {
@@ -150,7 +151,6 @@ function detectStep() {
 
   if (isPeak && stdDev > threshold) {
     registerStep();
-    createFootprint();
     lastStepTime = currentTime;
     lastMovementTime = currentTime;
     
@@ -174,20 +174,20 @@ function checkMovementStatus() {
 }
 
 function updateMovementStatus(moving) {
-  const statusEl = document.getElementById("stepCount");
+  const indicator = document.getElementById("statusIndicator");
+  
   if (moving) {
-    statusEl.textContent = "en movimiento";
-    statusEl.style.color = "#4ade80"; // verde
+    indicator.classList.remove("stopped");
+    indicator.classList.add("moving");
   } else {
-    statusEl.textContent = "quieto";
-    statusEl.style.color = "#94a3b8"; // gris
+    indicator.classList.remove("moving");
+    indicator.classList.add("stopped");
   }
 }
 
 function registerStep() {
   stepCount++;
 
-  // Cambiar de ubicación cada 3 pasos
   if (stepCount % 3 === 0 && currentLocationIndex < locations.length - 1) {
     currentLocationIndex++;
     updateLocation();
@@ -197,33 +197,10 @@ function registerStep() {
 function updateLocation() {
   const location = locations[currentLocationIndex];
   document.getElementById("locationText").textContent = location.text;
-
-  const textEl = document.getElementById("locationText");
-  textEl.style.animation = "none";
-  setTimeout(() => {
-    textEl.style.animation = "fadeIn 0.5s ease-in";
-  }, 10);
 }
 
-function createFootprint() {
-  const trail = document.getElementById("pathTrail");
-  const footprint = document.createElement("div");
-  footprint.className = "footprint";
-  footprint.textContent = "👣";
-  footprint.style.left = Math.random() * 80 + 10 + "%";
-  footprint.style.top = Math.random() * 80 + 10 + "%";
-  trail.appendChild(footprint);
-
-  setTimeout(() => {
-    footprint.remove();
-  }, 2000);
-}
-
-// Mensaje inicial
 if (window.DeviceMotionEvent) {
-  document.getElementById("status").textContent =
-    "Presiona el botón para comenzar";
+  document.getElementById("status").textContent = "presiona el botón para comenzar";
 } else {
-  document.getElementById("status").textContent =
-    "⚠️ Tu dispositivo no soporta sensor de movimiento";
+  document.getElementById("status").textContent = "tu dispositivo no soporta sensor de movimiento";
 }
