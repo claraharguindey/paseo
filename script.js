@@ -144,7 +144,7 @@ function initializeTracking() {
   
   document.getElementById("startBtn").textContent = "detener";
   document.getElementById("startBtn").onclick = stopAdventure;
-  document.getElementById("status").textContent = "camina para descubrir nuevos lugares";
+  document.getElementById("status").textContent = "camina";
 
   updateMovementStatus(false);
   window.addEventListener("devicemotion", handleMotion);
