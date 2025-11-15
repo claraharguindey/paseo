@@ -38,7 +38,7 @@ const locations = [
   { text: "Atraviesas un pequeño mercado de productos artesanales" },
   { text: "Te cruzas con un político local, parece de buen humor" },
   { text: "Recoges unas moras, quizás hoy hagas mermelada con ellas" },
-  { text: "Te cruzas con un cartel de "Se busca", aparece tu abuela" },
+  { text: "Te cruzas con un cartel de 'Se busca', aparece tu abuela" },
   { text: "Tiras una roca plana a un estanque y consigues que de tres saltos" },
   { text: "Subes una pequeña pendiente, desde arriba hay una vista preciosa" },
   { text: "Te cruzas con un perro muy pequeño que ladra muy fuerte" },
@@ -80,12 +80,11 @@ const locations = [
   { text: "Atraviesas el recuerdo de la posibilidad" },
   { text: "Caminas al encuentro de lo que fue" },
   { text: "Llegas con intención de recordar algo" },
-  { text: "Pasas durante todo este tiempo caminando" },
 ];
 
 let stepCount = 0;
 let usedIndices = [];
-let currentLocationIndex = -1; // Iniciar en -1
+let currentLocationIndex = null;
 let isTracking = false;
 let isMoving = false;
 
@@ -95,6 +94,7 @@ let lastStepTime = 0;
 let stepCooldown = 300;
 let lastMovementTime = 0;
 let movementTimeout = 1500;
+let movementCheckInterval = null;
 
 const isAndroid = /Android/i.test(navigator.userAgent);
 const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -126,7 +126,10 @@ function startAdventure() {
           document.getElementById("status").textContent = "permiso denegado";
         }
       })
-      .catch(console.error);
+      .catch((error) => {
+        console.error(error);
+        document.getElementById("status").textContent = "error al solicitar permiso";
+      });
   } else {
     initializeTracking();
   }
@@ -136,34 +139,39 @@ function initializeTracking() {
   isTracking = true;
   accelerationHistory = [];
   
-  // Mostrar primera ubicación aleatoria al empezar
-  if (currentLocationIndex === -1) {
-    currentLocationIndex = getRandomUnusedIndex();
-    updateLocation();
-  }
+  currentLocationIndex = getRandomUnusedIndex();
+  updateLocation();
   
   document.getElementById("startBtn").textContent = "detener";
   document.getElementById("startBtn").onclick = stopAdventure;
-  document.getElementById("status").textContent = "";
+  document.getElementById("status").textContent = "camina para descubrir nuevos lugares";
 
   updateMovementStatus(false);
   window.addEventListener("devicemotion", handleMotion);
 
-  setInterval(checkMovementStatus, 200);
+  if (movementCheckInterval) {
+    clearInterval(movementCheckInterval);
+  }
+  movementCheckInterval = setInterval(checkMovementStatus, 200);
 }
 
 function stopAdventure() {
   isTracking = false;
-  document.getElementById("startBtn").textContent = "reiniciar";
-  document.getElementById("startBtn").onclick = resetAdventure;
+  document.getElementById("startBtn").textContent = "continuar";
+  document.getElementById("startBtn").onclick = startAdventure;
   document.getElementById("status").textContent = "pausado";
   window.removeEventListener("devicemotion", handleMotion);
   updateMovementStatus(false);
+  
+  if (movementCheckInterval) {
+    clearInterval(movementCheckInterval);
+    movementCheckInterval = null;
+  }
 }
 
 function resetAdventure() {
   stepCount = 0;
-  currentLocationIndex = -1;
+  currentLocationIndex = null;
   usedIndices = [];
   accelerationHistory = [];
   isMoving = false;
@@ -175,6 +183,11 @@ function resetAdventure() {
 
   const indicator = document.getElementById("statusIndicator");
   indicator.classList.remove("moving", "stopped");
+  
+  if (movementCheckInterval) {
+    clearInterval(movementCheckInterval);
+    movementCheckInterval = null;
+  }
 }
 
 function handleMotion(event) {
@@ -274,15 +287,24 @@ function registerStep() {
 
 function updateLocation() {
   const location = locations[currentLocationIndex];
-  document.getElementById("locationText").textContent = location.text;
+  const locationText = document.getElementById("locationText");
+  
+  // Animación de fade
+  locationText.style.opacity = "0";
+  
+  setTimeout(() => {
+    locationText.textContent = location.text;
+    locationText.style.opacity = "1";
+  }, 300);
 }
 
-// Inicialización
-if (window.DeviceMotionEvent) {
-  document.getElementById("locationText").textContent = "...";
-  document.getElementById("status").textContent = "";
-} else {
-  document.getElementById("locationText").textContent = "...";
-  document.getElementById("status").textContent =
-    "tu dispositivo no soporta sensor de movimiento";
-}
+document.addEventListener('DOMContentLoaded', function() {
+  const startBtn = document.getElementById("startBtn");
+  startBtn.onclick = startAdventure;
+  
+  if (!window.DeviceMotionEvent) {
+    document.getElementById("status").textContent = 
+      "tu dispositivo no soporta sensor de movimiento";
+    startBtn.disabled = true;
+  }
+});
