@@ -27,7 +27,6 @@ const locations = [
   { text: "Su lana, material considerado un residuo y que ya nadie quiere, para nosotras es la manera de hablar un territorio, una cultura y un calor que hay que recuperar." },
 ];
 
-
 const MIN_STEPS_PER_TEXT = 4;
 const WORDS_PER_STEP = 2;
 
@@ -38,6 +37,7 @@ let deck = [];
 let currentLocationIndex = null;
 let isTracking = false;
 let isMoving = false;
+let manualMode = false;
 let wakeLock = null;
 
 let accelerationHistory = [];
@@ -89,31 +89,66 @@ function releaseWakeLock() {
 }
 
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && isTracking) {
+  if (document.visibilityState === "visible" && (isTracking || manualMode)) {
     requestWakeLock();
   }
 });
 
 function startAdventure() {
-  if (
-    typeof DeviceMotionEvent !== "undefined" &&
-    typeof DeviceMotionEvent.requestPermission === "function"
-  ) {
+  if (!window.DeviceMotionEvent) {
+    startManualMode("sin sensor de movimiento");
+    return;
+  }
+
+  if (typeof DeviceMotionEvent.requestPermission === "function") {
     DeviceMotionEvent.requestPermission()
       .then((permissionState) => {
         if (permissionState === "granted") {
           initializeTracking();
         } else {
-          setStatus("permiso denegado");
+          startManualMode("permiso denegado");
         }
       })
       .catch((error) => {
         console.error(error);
-        setStatus("error al solicitar permiso");
+        startManualMode("no se pudo activar el sensor");
       });
   } else {
     initializeTracking();
   }
+}
+
+function startManualMode(reason) {
+  manualMode = true;
+  stopSensor();
+
+  if (currentLocationIndex === null) {
+    showNextLocation();
+  }
+
+  const startBtn = document.getElementById("startBtn");
+  startBtn.textContent = "reiniciar";
+  startBtn.onclick = resetAdventure;
+
+  setStatus(reason ? `${reason} - toca el texto para avanzar` : "toca el texto para avanzar");
+  requestWakeLock();
+}
+
+function handleTap() {
+  if (currentLocationIndex === null) return;
+  if (!isTracking && !manualMode) return;
+  showNextLocation();
+}
+
+function stopSensor() {
+  isTracking = false;
+  window.removeEventListener("devicemotion", handleMotion);
+  if (movementCheckInterval) {
+    clearInterval(movementCheckInterval);
+    movementCheckInterval = null;
+  }
+  const indicator = document.getElementById("statusIndicator");
+  indicator.classList.remove("moving", "stopped");
 }
 
 function initializeTracking() {
@@ -140,7 +175,7 @@ function initializeTracking() {
   motionEventReceived = false;
   setTimeout(() => {
     if (isTracking && !motionEventReceived) {
-      setStatus("no llegan datos del sensor de movimiento");
+      startManualMode("no llegan datos del sensor");
     }
   }, 3000);
 }
@@ -165,8 +200,8 @@ function stopAdventure() {
 }
 
 function resetAdventure() {
-  isTracking = false;
-  window.removeEventListener("devicemotion", handleMotion);
+  stopSensor();
+  manualMode = false;
   releaseWakeLock();
 
   stepCount = 0;
@@ -185,14 +220,6 @@ function resetAdventure() {
   startBtn.textContent = "empezar";
   startBtn.onclick = startAdventure;
   setStatus("");
-
-  const indicator = document.getElementById("statusIndicator");
-  indicator.classList.remove("moving", "stopped");
-
-  if (movementCheckInterval) {
-    clearInterval(movementCheckInterval);
-    movementCheckInterval = null;
-  }
 }
 
 function handleMotion(event) {
@@ -291,8 +318,5 @@ document.addEventListener("DOMContentLoaded", function () {
   const startBtn = document.getElementById("startBtn");
   startBtn.onclick = startAdventure;
 
-  if (!window.DeviceMotionEvent) {
-    setStatus("tu dispositivo no soporta sensor de movimiento");
-    startBtn.disabled = true;
-  }
+  document.querySelector(".location-display").addEventListener("click", handleTap);
 });
